@@ -52,6 +52,7 @@ public class Graph {
             throw new IllegalArgumentException("There's already an edge from " + i + " to " + j + " !");
         }
         adj.get(i).add(new Edge(i,j));
+
         adj.get(j).add(new Edge(j,i));
         m++;
     }
