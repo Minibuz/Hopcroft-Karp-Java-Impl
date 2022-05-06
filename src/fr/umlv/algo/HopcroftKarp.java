@@ -1,6 +1,12 @@
 package fr.umlv.algo;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -41,12 +47,12 @@ public class HopcroftKarp {
                  * for each neighbor v' of v not in visited
                  */
                 for(int i = 0; i < g.numberOfVertices(); i++) {
-                    if(g.isEdge(vertex, i) && !visited[i]) {
+                    if(g.isEdge(vertex, i) && g.isEdge(i, vertex) && !visited[i]) {
                         /*
                          * (clvl even and {v,v'} not in M) or (clvl odd and {v,v'} in M)
                          */
                         if((currentLevel%2==0 && !m.contains(new Edge(vertex, i)))
-                                || (currentLevel%2!=0 && m.contains(new Edge(vertex, i)))) {
+                                || (currentLevel%2!=0 && m.contains(new Edge(i, vertex)))) {
                             newQueue.add(i);
                             visited[i] = true;
                             level[i] = currentLevel + 1;
@@ -65,19 +71,17 @@ public class HopcroftKarp {
             /*
              * any vertex in newqueue is unmatched and not in V1
              */
-            final boolean[] matched = {true, true};
-            newQueue.forEach(vertex -> {
-                if(!V1.contains(vertex)) {
-                    matched[0] = false;
-                }
-                m.forEach(edge -> {
-                    if(edge.end() == vertex || edge.start() == vertex) {
-                        matched[1] = false;
+            for(var vertex : newQueue) {
+                    if (!V1.contains(vertex)) {
+                        var unmatched = true;
+                        for (var edge : m) {
+                            if (edge.start() == vertex || edge.end() == vertex) {
+                                unmatched = false;
+                                break;
+                            }
+                        }
+                        if (unmatched) return true;
                     }
-                });
-            });
-            if(matched[0] && matched[1]) {
-                return true;
             }
 
             queue.addAll(newQueue);
@@ -109,12 +113,11 @@ public class HopcroftKarp {
          * for each neighbor v' of v not visited
          */
         for(int i = 0; i < g.numberOfVertices(); i++) {
-            if(g.isEdge(v, i) && !visited[i]) {
+            if(g.isEdge(v, i) && g.isEdge(i, v) && !visited[i]) {
                 /*
                  *   if (level[v] even and {v,v'} not in M) or (level[v] odd and {v,v'} in M)
                  */
-                if( (level[v]%2 == 0  && !m.contains(new Edge(v, i)))
-                        || (level[v]%2 != 0  && m.contains(new Edge(v, i)))) {
+                if( (level[v]%2 == 0  && !m.contains(new Edge(v, i)))) {
                     /*
                      * if level[v'] == level[v]+1 and levelDFS(G, V1, M, level, visited, v')
                      */
@@ -127,12 +130,25 @@ public class HopcroftKarp {
                         return true;
                     }
                 }
+                if(level[v]%2 != 0  && m.contains(new Edge(i, v))) {
+                    /*
+                     * if level[v'] == level[v]+1 and levelDFS(G, V1, M, level, visited, v')
+                     */
+                    if( level[i] == level[v]+1 && levelDFS(g, v1, m, level, visited, i)) {
+                        if(m.contains(new Edge(i, v))) {
+                            m.remove(new Edge(i, v));
+                        } else {
+                            m.add(new Edge(i, v));
+                        }
+                        return true;
+                    }
+                }
             }
         }
         return false;
     }
 
-    public static List<Edge> hopcroftKarp(Graph g, List<Integer> V1 , List<Integer> V2) {
+    public static List<Edge> hopcroftKarp(Graph g, int[] iterations, List<Integer> V1, List<Integer> V2) {
         var M = new ArrayList<Edge>();
 
         // initialize the array of level
@@ -144,16 +160,15 @@ public class HopcroftKarp {
 
         // while levelBFS(G, V1, M, level)         // Still has augmenting paths
         while(levelBFS(g, V1, M, level)) {
-            System.out.println(M);
             // for each unmatched v in V1
             V1.forEach(v -> {
-                final boolean[] toDo = {true};
-                M.forEach(edge -> {
+                boolean toDo = true;
+                for(var edge : M) {
                     if(edge.start() == v || edge.end() == v) {
-                        toDo[0] = false;
+                        toDo = false;
                     }
-                });
-                if(toDo[0]) {
+                }
+                if(toDo) {
                     // levelDFS(G, V1, M, level, visited, v)
                     levelDFS(g, V1, M, level, visited, v);
                 }
@@ -161,19 +176,57 @@ public class HopcroftKarp {
             // clear up the array of level and visited
             Utils.emptyArray(level);
             Utils.emptyArray(visited);
+            iterations[0]++;
         }
         return M;
     }
 
+    private static void usage() {
+        System.out.println("Usage : HopcroftKarp input_path");
+    }
     public static void main(String[] args) throws IOException {
-        //testFile("testcase/graphs/g1.gr");
-        //testFile("testcase/graphs/g2.gr");
+        testFile("testcase/graphs/g1.gr");
+        testFile("testcase/graphs/g2.gr");
         testFile("testcase/graphs/g3.gr");
-        //testFile("testcase/graphs/g4.gr");
-        //testFile("testcase/graphs/g5.gr");
-        //testFile("testcase/graphs/g6.gr");
-        //testFile("testcase/graphs/g7.gr");
-        //testFile("testcase/graphs/g8.gr");
+        testFile("testcase/graphs/g4.gr");
+        /*testFile("testcase/graphs/g5.gr");
+        testFile("testcase/graphs/g6.gr");
+        testFile("testcase/graphs/g7.gr");
+        testFile("testcase/graphs/g8.gr");
+        testFile("testcase/graphs/g9.gr");
+        testFile("testcase/graphs/g10.gr");
+        testFile("testcase/graphs/g11.gr");
+        testFile("testcase/graphs/g12.gr");
+        testFile("testcase/graphs/g13.gr");
+        testFile("testcase/graphs/g14.gr");*/
+
+        /*if(args.length < 1) {
+            usage();
+            return;
+        }
+
+        Graph graph = Graph.buildGraphFromFile(args[0]);
+        var v1 = IntStream.range(0, graph.numberFromV1()).boxed().toList();
+        var v2 =  IntStream.range(graph.numberFromV1(), graph.numberOfVertices()).boxed().toList();
+        var M = hopcroftKarp(graph, v1, v2);
+
+        writeFileOutput(args[0], M);
+        writeConsoleOutput(args[0], M);*/
+    }
+
+    private static void writeFileOutput(String path, List<Edge> m) throws IOException {
+        Path fileOutput = Paths.get(path + ".sol");
+        Files.writeString(fileOutput, String.valueOf(m.size()));
+        m.sort(Comparator.comparingInt(Edge::start));
+        for (var edge: m) {
+            Files.writeString(fileOutput, edge.fileOutput());
+        }
+    }
+
+    private static void writeConsoleOutput(String path, List<Edge> m, int iterations) {
+        System.out.println("File " + path + ".gr, solution " + path + ".sol");
+        System.out.println("Matching with " + m.size() + " edge(s)");
+        System.out.println("Using " + iterations + " iteration(s)");
     }
 
     private static void testFile(String path) throws IOException {
@@ -181,8 +234,11 @@ public class HopcroftKarp {
 
         var v1 = IntStream.range(0, g.numberFromV1()).boxed().toList();
         var v2 =  IntStream.range(g.numberFromV1(), g.numberOfVertices()).boxed().toList();
-        var result = hopcroftKarp(g, v1, v2);
+        var iterations = new int[1];
+        var result = hopcroftKarp(g, iterations, v1, v2);
+        result.sort(Comparator.comparingInt(Edge::start));
         System.out.println(result.size());
         System.out.println(result);
+        System.out.println(iterations[0]);
     }
 }
