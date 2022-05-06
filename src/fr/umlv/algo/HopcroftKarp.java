@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -185,60 +186,38 @@ public class HopcroftKarp {
         System.out.println("Usage : HopcroftKarp input_path");
     }
     public static void main(String[] args) throws IOException {
-        testFile("testcase/graphs/g1.gr");
-        testFile("testcase/graphs/g2.gr");
-        testFile("testcase/graphs/g3.gr");
-        testFile("testcase/graphs/g4.gr");
-        /*testFile("testcase/graphs/g5.gr");
-        testFile("testcase/graphs/g6.gr");
-        testFile("testcase/graphs/g7.gr");
-        testFile("testcase/graphs/g8.gr");
-        testFile("testcase/graphs/g9.gr");
-        testFile("testcase/graphs/g10.gr");
-        testFile("testcase/graphs/g11.gr");
-        testFile("testcase/graphs/g12.gr");
-        testFile("testcase/graphs/g13.gr");
-        testFile("testcase/graphs/g14.gr");*/
-
-        /*if(args.length < 1) {
+        if(args.length < 1) {
             usage();
             return;
         }
 
-        Graph graph = Graph.buildGraphFromFile(args[0]);
+        Graph graph = Graph.buildGraphFromFile(args[0] + ".gr");
         var v1 = IntStream.range(0, graph.numberFromV1()).boxed().toList();
         var v2 =  IntStream.range(graph.numberFromV1(), graph.numberOfVertices()).boxed().toList();
-        var M = hopcroftKarp(graph, v1, v2);
+        int[] iterations = new int[1];
+        var M = hopcroftKarp(graph, iterations, v1, v2);
 
-        writeFileOutput(args[0], M);
-        writeConsoleOutput(args[0], M);*/
+        writeFileOutput(args[0], graph.numberFromV1(), M);
+        writeConsoleOutput(args[0], M, iterations[0]);
     }
 
-    private static void writeFileOutput(String path, List<Edge> m) throws IOException {
-        Path fileOutput = Paths.get(path + ".sol");
-        Files.writeString(fileOutput, String.valueOf(m.size()));
+    private static void writeFileOutput(String path, int V1, List<Edge> m) throws IOException {
         m.sort(Comparator.comparingInt(Edge::start));
-        for (var edge: m) {
-            Files.writeString(fileOutput, edge.fileOutput());
+        StringBuilder sb = new StringBuilder();
+        sb.append(m.size()).append("\n");
+        m.forEach(edge -> sb.append(edge.start()).append(" ").append(edge.end() - V1).append("\n"));
+        sb.replace(sb.length()-1, sb.length(), "");
+
+        Path fileOutput = Paths.get(path + "_2.sol");
+        if(!Files.exists(fileOutput)) {
+            Files.createFile(fileOutput);
         }
+        Files.writeString(fileOutput, sb.toString());
     }
 
     private static void writeConsoleOutput(String path, List<Edge> m, int iterations) {
         System.out.println("File " + path + ".gr, solution " + path + ".sol");
         System.out.println("Matching with " + m.size() + " edge(s)");
         System.out.println("Using " + iterations + " iteration(s)");
-    }
-
-    private static void testFile(String path) throws IOException {
-        Graph g = Graph.buildGraphFromFile(path);
-
-        var v1 = IntStream.range(0, g.numberFromV1()).boxed().toList();
-        var v2 =  IntStream.range(g.numberFromV1(), g.numberOfVertices()).boxed().toList();
-        var iterations = new int[1];
-        var result = hopcroftKarp(g, iterations, v1, v2);
-        result.sort(Comparator.comparingInt(Edge::start));
-        System.out.println(result.size());
-        System.out.println(result);
-        System.out.println(iterations[0]);
     }
 }

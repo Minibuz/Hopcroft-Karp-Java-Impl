@@ -44,7 +44,6 @@ public class Graph {
 
     public void addEdge(int i, int j) {
         Objects.checkIndex(i, n);
-
         j = j + v1;
         Objects.checkIndex(j, n);
 
