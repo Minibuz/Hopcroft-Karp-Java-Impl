@@ -120,6 +120,7 @@ public class HopcroftKarp {
 
         /*
          * Compute for every neighbor if they are visited before doing the rest of the computation.
+         * v -> i (v')
          */
         for (Iterator<Edge> it = g.edgeIterator(v); it.hasNext();) {
             Edge edge = it.next();
@@ -129,12 +130,12 @@ public class HopcroftKarp {
                  * This is V1 to V2
                  * If level[v] is even, and {v, v'} is not in M
                  */
-                if( (level[v]%2 == 0  && !m.contains(new Edge(v, i)))) {
+                if(level[v]%2 == 0  && !m.contains(new Edge(v, i))) {
                     /*
                      * If level[v'] is equal to level[v]+1 and levelDFS(G, V1, M, level, visited, v') is true.
                      *      levelDFS is true means there's an unmatched vertex.
                      */
-                    if( level[i] == level[v]+1 && levelDFS(g, v1, m, level, visited, i)) {
+                    if(LevelCorrectAndDFS(g, v1, m, level, visited, v, i)) {
                         if(m.contains(new Edge(v, i))) {
                             m.remove(new Edge(v, i));
                         } else {
@@ -152,7 +153,7 @@ public class HopcroftKarp {
                      * If level[v'] is equal to level[v]+1 and levelDFS(G, V1, M, level, visited, v') is true.
                      *      levelDFS is true means there's an unmatched vertex.
                      */
-                    if( level[i] == level[v]+1 && levelDFS(g, v1, m, level, visited, i)) {
+                    if(LevelCorrectAndDFS(g, v1, m, level, visited, v, i)) {
                         if(m.contains(new Edge(i, v))) {
                             m.remove(new Edge(i, v));
                         } else {
@@ -164,6 +165,10 @@ public class HopcroftKarp {
             }
         }
         return false;
+    }
+
+    private static boolean LevelCorrectAndDFS(Graph g, List<Integer> v1, ArrayList<Edge> m, int[] level, boolean[] visited, int v, int i) {
+        return level[i] == level[v] + 1 && levelDFS(g, v1, m, level, visited, i);
     }
 
     /**
